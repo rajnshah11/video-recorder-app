@@ -4,6 +4,10 @@ const appServer = express();
 
 // Serve video files
 appServer.get("/video", (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');  // Allow all origins (or specify your origin)
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS'); // Allow specific methods
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // Allow specific headers
+
   let decodedPath = decodeURIComponent(req.query.path);
   decodedPath = decodedPath.split('?')[0];
   
@@ -15,21 +19,14 @@ appServer.get("/video", (req, res) => {
   if (stat.size === 0) {
     return res.status(404).send("Video file is empty");
   }
-  console.log("Decoded Path:", decodedPath);
 
   const fileSize = stat.size;
   const range = req.headers.range;
-
-  console.log("File Size:", fileSize);
-  console.log("Range Header:", range);
 
   if (range) {
     const parts = range.replace(/bytes=/, "").split("-");
     const start = parseInt(parts[0], 10);
     const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-
-    console.log("Start Byte:", start);
-    console.log("End Byte:", end);
 
     if (start >= fileSize || end >= fileSize) {
       res.setHeader("Content-Range", `bytes */${fileSize}`);

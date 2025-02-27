@@ -22,7 +22,7 @@
 
 /* Video preview styling */
 .video-preview {
-  width: 350px;  /* Fixed width */
+  width: 400px;  /* Fixed width */
   height: 200px; /* Fixed height */
   max-width: 800px;
   border-radius: 10px;

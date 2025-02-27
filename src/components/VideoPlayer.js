@@ -30,7 +30,6 @@ const VideoPlayer = ({ videoUrl }) => {
     if (videoRef.current) {
       videoRef.current.play().catch(handleVideoError);
       setIsPlaying(true);
-      alert("Video Started!");
     }
   }, []);
 
@@ -38,7 +37,6 @@ const VideoPlayer = ({ videoUrl }) => {
     if (videoRef.current) {
       videoRef.current.pause();
       setIsPlaying(false);
-      alert("Video Paused!");
     }
   }, []);
 

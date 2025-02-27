@@ -31,8 +31,9 @@ function App() {
         {/* Show Video Player if there's a recorded video */}
         {videoPath && (
           <section className={`player-section ${darkMode ? "dark-section" : "light-section"}`}>
-            <VideoPlayer videoUrl={`http://localhost:3001/video?path=${encodeURIComponent(videoPath)}`} />
+            <VideoPlayer videoUrl={`http://localhost:8081/video?path=${encodeURIComponent(videoPath)}`} />
           </section>
+          
         )}
       </main>
     </div>

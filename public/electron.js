@@ -15,7 +15,6 @@ function validateEnv() {
     process.exit(1); // Exit the app if required variable is missing
   }
   if (!process.env.REACT_URL) {
-    logger.warn("Missing environment variable: REACT_URL. Defaulting to http://localhost:3000");
     process.env.REACT_URL = "http://localhost:3000"; // Default to development URL
   }
 }
@@ -24,7 +23,7 @@ app.whenReady().then(() => {
   validateEnv(); // Validate required environment variables
 
   // Start the Express server using the port from the .env file
-  startServer(process.env.PORT || 3001);
+  startServer(process.env.PORT || 8081);
 
   // Create the Electron window
   mainWindow = new BrowserWindow({
@@ -37,7 +36,6 @@ app.whenReady().then(() => {
     },
   });
 
-  console.log(process.env.REACT_URL);
   // Use the React URL from the .env file for loading the frontend
   mainWindow.loadURL(process.env.REACT_URL);
 
