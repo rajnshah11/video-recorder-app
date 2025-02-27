@@ -3,7 +3,7 @@ import React, { useRef, useState } from "react";
 const VideoRecorder = ({ onSave }) => {
   const videoRef = useRef(null);
   const [mediaRecorder, setMediaRecorder] = useState(null);
-  const [recordedChunks, setRecordedChunks] = useState([]);
+  const recordedChunksRef = useRef([]); // Use ref instead of state for recordedChunks
   const [isRecording, setIsRecording] = useState(false);
 
   const startRecording = async () => {
@@ -15,12 +15,12 @@ const VideoRecorder = ({ onSave }) => {
       videoRef.current.srcObject = stream;
       videoRef.current.play();
 
-      const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+      const recorder = new MediaRecorder(stream, { mimeType: "video/mp4" });
 
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           console.log("Data available: ", event.data);
-          setRecordedChunks((prev) => [...prev, event.data]);
+          recordedChunksRef.current.push(event.data); // Store data in ref instead of state
         }
       };
 
@@ -30,13 +30,13 @@ const VideoRecorder = ({ onSave }) => {
 
       recorder.onstop = () => {
         console.log("Recording stopped");
-        if (recordedChunks.length === 0) {
+        if (recordedChunksRef.current.length === 0) {
           console.error("No recorded data available.");
           return;
         }
 
         // Create a Blob from recorded chunks
-        const blob = new Blob(recordedChunks, { type: "video/webm" });
+        const blob = new Blob(recordedChunksRef.current, { type: "video/mp4" });
         console.log("Recorded video size:", blob.size);
 
         // Show save dialog

@@ -1,66 +1,68 @@
 const { app, BrowserWindow, ipcMain, dialog } = require("electron");
-const path = require("path");
 const fs = require("fs");
-const http = require("http");
+const express = require("express");
+// Create an Express server for serving videos
+const appServer = express();
 
-const server = http.createServer((req, res) => {
-  let filePath = decodeURIComponent(req.url.slice(1)); // Remove leading '/'
-
-  // Remove 'file://' if present in the URL (for edge cases)
-  filePath = filePath.replace(/^file:\/\//, '');  // Remove 'file://' part
-
-  // Resolve the absolute path relative to the server directory
-  const fullFilePath = path.join(__dirname, filePath); 
-
-  console.log(fullFilePath); // Log the full file path to ensure correct resolution
-
-  // Handle CORS (Cross-Origin Resource Sharing)
-  res.setHeader("Access-Control-Allow-Origin", "*");
-
-  // Check if the file exists
-  if (!fs.existsSync(fullFilePath)) {
-    res.writeHead(404, { "Content-Type": "text/plain" });
-    res.end("File not found");
-    return;
+// Serve video files with range support
+appServer.get("/video", (req, res) => {
+  const decodedPath = decodeURIComponent(req.query.path);
+  if (!decodedPath || !fs.existsSync(decodedPath)) {
+    return res.status(404).send("Video file not found");
   }
 
-  const stat = fs.statSync(fullFilePath); // Get file stats
-  const range = req.headers.range; // Get the range from request headers
+  const stat = fs.statSync(decodedPath);
+  if (stat.size === 0) {
+    return res.status(404).send("Video file is empty");
+  }
+  console.log("Decoded Path:", decodedPath);
 
-  if (!range) {
-    // If no range header, send the entire file
-    res.writeHead(200, {
-      "Content-Type": "video/mp4",
-      "Content-Length": stat.size,
-    });
-    fs.createReadStream(fullFilePath).pipe(res);
-  } else {
-    // Handle range requests
-    const [startStr, endStr] = range.replace(/bytes=/, "").split("-");
-    const start = parseInt(startStr, 10);
-    const end = endStr ? parseInt(endStr, 10) : stat.size - 1;
+  if (!decodedPath || !fs.existsSync(decodedPath)) {
+    return res.status(404).send("Video file not found");
+  }
 
-    if (start >= stat.size || end >= stat.size) {
-      res.writeHead(416, {
-        "Content-Range": `bytes */${stat.size}`,
-      });
-      res.end();
-      return;
+  const fileSize = stat.size;
+  const range = req.headers.range;
+
+  console.log("File Size:", fileSize);
+  console.log("Range Header:", range);
+
+  if (range) {
+    const parts = range.replace(/bytes=/, "").split("-");
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+
+    console.log("Start Byte:", start);
+    console.log("End Byte:", end);
+
+    if (start >= fileSize || end >= fileSize) {
+      res.setHeader("Content-Range", `bytes */${fileSize}`);
+      return res.status(416).send("Requested Range Not Satisfiable");
     }
 
+    const chunkSize = end - start + 1;
+    const fileStream = fs.createReadStream(decodedPath, { start, end });
+
     res.writeHead(206, {
-      "Content-Range": `bytes ${start}-${end}/${stat.size}`,
+      "Content-Range": `bytes ${start}-${end}/${fileSize}`,
       "Accept-Ranges": "bytes",
-      "Content-Length": end - start + 1,
+      "Content-Length": chunkSize,
       "Content-Type": "video/mp4",
     });
 
-    fs.createReadStream(fullFilePath, { start, end }).pipe(res); // Send part of the file (range)
+    fileStream.pipe(res);
+  } else {
+    res.writeHead(200, {
+      "Content-Length": fileSize,
+      "Content-Type": "video/mp4",
+    });
+    fs.createReadStream(decodedPath).pipe(res);
   }
 });
 
-server.listen(3001, () => {
-  console.log("Server running on http://localhost:3001");
+// Start the Express server
+appServer.listen(3001, () => {
+  console.log("Server running at http://localhost:3001");
 });
 
 let mainWindow;
@@ -98,15 +100,22 @@ ipcMain.handle("show-save-dialog", async () => {
     ],
   });
 
-  // Return null if user cancels the dialog
   return result.canceled ? null : result.filePath;
 });
 
 // Handle save file operation
 ipcMain.handle("save-file", async (_, { filePath, buffer }) => {
   try {
+    if (!buffer || buffer.length === 0) {
+      throw new Error("Buffer is empty or invalid.");
+    }
     fs.writeFileSync(filePath, buffer);
-    return true; // Explicitly return success status
+    const stat = fs.statSync(filePath);
+    if (stat.size === 0) {
+      throw new Error("File saved but is empty.");
+    }
+    console.log(`File successfully saved to ${filePath}`);
+    return true;
   } catch (error) {
     console.error("Failed to save file:", error);
     return false;
