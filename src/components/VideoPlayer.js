@@ -1,10 +1,11 @@
-import React, { useRef, useState,useEffect } from "react";
+import React, { useRef, useState, useEffect } from "react";
 
 const VideoPlayer = ({ videoUrl }) => {
   const videoRef = useRef(null); // Reference to the video element
   const [currentTime, setCurrentTime] = useState(0); // Current playback time
   const [duration, setDuration] = useState(0); // Total duration of the video
   const [isPlaying, setIsPlaying] = useState(false); // Playback state
+  const [videoSrc, setVideoSrc] = useState(videoUrl); // Video source with query parameter
 
   // Update current time as the video plays
   const handleTimeUpdate = () => {
@@ -13,46 +14,69 @@ const VideoPlayer = ({ videoUrl }) => {
 
   // Set duration when metadata is loaded
   const handleLoadedMetadata = () => {
-    setDuration(videoRef.current.duration);
+    if (videoRef.current) {
+      setDuration(videoRef.current.duration);
+      console.log("New video duration:", videoRef.current.duration); // Debugging log
+    }
   };
 
   // Play the video
   const playVideo = () => {
-    videoRef.current.play();
-    setIsPlaying(true);
+    if (videoRef.current) {
+      videoRef.current.play();
+      setIsPlaying(true);
+    }
   };
 
   // Pause the video
   const pauseVideo = () => {
-    videoRef.current.pause();
-    setIsPlaying(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
   };
 
   // Stop the video (pause and reset to start)
   const stopVideo = () => {
-    videoRef.current.pause();
-    videoRef.current.currentTime = 0; // Reset to beginning
-    setCurrentTime(0);
-    setIsPlaying(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0; // Reset to beginning
+      setCurrentTime(0);
+      setIsPlaying(false);
+    }
   };
 
   // Seek to a specific time in the video
   const handleSeek = (event) => {
-    const newTime = (event.target.value / 100) * duration; // Calculate new time based on slider value
-    videoRef.current.currentTime = newTime;
-    setCurrentTime(newTime);
-  };
-  useEffect(() => {
     if (videoRef.current) {
-      videoRef.current.pause(); // Pause the current playback
-      videoRef.current.src = videoUrl; // Update the source URL
-      videoRef.current.load(); // Reload the new video source
-      setCurrentTime(0); // Reset current time
-      setDuration(0); // Reset duration
-      setIsPlaying(false); // Ensure playback state is reset
-      console.log("Video URL changed:", videoUrl); // Debugging log
+      const newTime = (event.target.value / 100) * duration; // Calculate new time based on slider value
+      videoRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
     }
-  }, [videoUrl]);
+  };
+
+  // Reload video when URL changes or even if it's the same (force reload)
+  useEffect(() => {
+    // Append a timestamp to the video URL to force a re-fetch each time
+    const newVideoSrc = `${videoUrl}?t=${new Date().getTime()}`;
+
+    setVideoSrc(newVideoSrc); // Update the source URL with the timestamp
+
+    if (videoRef.current) {
+      console.log("Video URL changed:", newVideoSrc); // Debugging log
+
+      // Reset playback state
+      videoRef.current.pause();
+      videoRef.current.src = newVideoSrc; // Set the new source with timestamp
+      videoRef.current.load();
+
+      setCurrentTime(0);
+      setDuration(0);
+      setIsPlaying(false);
+
+      console.log("Video reloaded with new source.");
+    }
+  }, [videoUrl]); // Dependency array ensures it runs whenever videoUrl changes
 
   return (
     <div style={{ textAlign: "center", marginTop: "20px" }}>
@@ -61,9 +85,9 @@ const VideoPlayer = ({ videoUrl }) => {
       {/* Video Element */}
       <video
         ref={videoRef}
-        src={videoUrl}
+        src={videoSrc} // Use the updated video source
         onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata}
+        onLoadedMetadata={handleLoadedMetadata} // Triggered when metadata is loaded
         style={{ width: "70%", marginTop: "10px" }}
       ></video>
 

@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 
-const VideoRecorder = ({ onSave }) => {
+const VideoRecorder = ({ onSave, onStartRecording }) => {
   const videoRef = useRef(null);
   const [mediaRecorder, setMediaRecorder] = useState(null);
   const recordedChunksRef = useRef([]); // Use ref instead of state for recordedChunks
@@ -12,8 +12,13 @@ const VideoRecorder = ({ onSave }) => {
         video: true,
         audio: true,
       });
+      if (onStartRecording) {
+        onStartRecording();
+      }
+
       videoRef.current.srcObject = stream;
       videoRef.current.play();
+      recordedChunksRef.current = [];
 
       const recorder = new MediaRecorder(stream, { mimeType: "video/mp4" });
 
