@@ -13,7 +13,7 @@ function App() {
       {/* Header */}
       <header className={`app-header ${darkMode ? "dark-header" : "light-header"}`}>
         <h1>Electron Video Recorder</h1>
-        <button className="theme-toggle-btn" onClick={() => setDarkMode(!darkMode)} aria-label="Toggle dark mode">
+        <button className= "theme-toggle-btn" onClick={() => setDarkMode(!darkMode)} aria-label="Toggle dark mode">
           {darkMode ? <FaSun className="icon light-icon" /> : <FaMoon className="icon dark-icon" />}
         </button>
       </header>

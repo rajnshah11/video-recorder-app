@@ -14,9 +14,6 @@ function validateEnv() {
     logger.error("Missing environment variable: PORT");
     process.exit(1); // Exit the app if required variable is missing
   }
-  if (!process.env.REACT_URL) {
-    process.env.REACT_URL = "http://localhost:3000"; // Default to development URL
-  }
 }
 
 app.whenReady().then(() => {
@@ -40,9 +37,9 @@ app.whenReady().then(() => {
   mainWindow.loadURL(process.env.REACT_URL);
 
   // Open DevTools only in development
-  if (process.env.NODE_ENV === "development") {
-    mainWindow.webContents.openDevTools();
-  }
+  //if (process.env.NODE_ENV === "development") {
+  //  mainWindow.webContents.openDevTools();
+  //}
 
   logger.info("Electron app started successfully.");
 });
