@@ -1,11 +1,12 @@
 import React, { useRef, useState, useEffect } from "react";
+import { FaPlay, FaPause, FaStop } from "react-icons/fa"; // Import icons for controls
+import "./VideoPlayer.css"; // Import the CSS file
 
 const VideoPlayer = ({ videoUrl }) => {
   const videoRef = useRef(null); // Reference to the video element
   const [currentTime, setCurrentTime] = useState(0); // Current playback time
   const [duration, setDuration] = useState(0); // Total duration of the video
   const [isPlaying, setIsPlaying] = useState(false); // Playback state
-  const [videoSrc, setVideoSrc] = useState(videoUrl); // Video source with query parameter
 
   // Update current time as the video plays
   const handleTimeUpdate = () => {
@@ -55,75 +56,70 @@ const VideoPlayer = ({ videoUrl }) => {
     }
   };
 
-  // Reload video when URL changes or even if it's the same (force reload)
+  // Reload video when URL changes
   useEffect(() => {
-    // Append a timestamp to the video URL to force a re-fetch each time
-    const newVideoSrc = `${videoUrl}?t=${new Date().getTime()}`;
-
-    setVideoSrc(newVideoSrc); // Update the source URL with the timestamp
-
     if (videoRef.current) {
-      console.log("Video URL changed:", newVideoSrc); // Debugging log
+      console.log("Video URL changed:", videoUrl); // Debugging log
 
       // Reset playback state
       videoRef.current.pause();
-      videoRef.current.src = newVideoSrc; // Set the new source with timestamp
+      videoRef.current.src = videoUrl; 
       videoRef.current.load();
-
-      setCurrentTime(0);
-      setDuration(0);
-      setIsPlaying(false);
-
-      console.log("Video reloaded with new source.");
+      setCurrentTime(0); 
+      setDuration(0); 
+      setIsPlaying(false); 
     }
-  }, [videoUrl]); // Dependency array ensures it runs whenever videoUrl changes
+    return () => {
+      if (videoRef.current) {
+        videoRef.current.pause(); // Stop the video when unmounting
+        videoRef.current = null;
+      }
+    };
+  }, [videoUrl]);
 
   return (
-    <div style={{ textAlign: "center", marginTop: "20px" }}>
-      <h2>Video Playback</h2>
+    <div className="video-playback">
+      <h2>🎥 Playback</h2>
 
-      {/* Video Element */}
-      <video
-        ref={videoRef}
-        src={videoSrc} // Use the updated video source
-        onTimeUpdate={handleTimeUpdate}
-        onLoadedMetadata={handleLoadedMetadata} // Triggered when metadata is loaded
-        style={{ width: "70%", marginTop: "10px" }}
-      ></video>
+      {/* Video container */}
+      <div className="video-container">
+        <video
+          ref={videoRef}
+          onTimeUpdate={handleTimeUpdate}
+          onLoadedMetadata={handleLoadedMetadata} // Triggered when metadata is loaded
+          className="video-preview"
+        ></video>
+      </div>
 
       {/* Playback Controls */}
-      <div style={{ marginTop: "10px" }}>
-        <button onClick={playVideo} disabled={isPlaying}>
-          Play
+      <div className="controls">
+        <button className="btn start-btn" onClick={playVideo} disabled={isPlaying}>
+          <FaPlay /> Play
         </button>
-        <button onClick={pauseVideo} disabled={!isPlaying}>
-          Pause
+        <button className="btn pause-btn" onClick={pauseVideo} disabled={!isPlaying}>
+          <FaPause /> Pause
         </button>
-        <button onClick={stopVideo}>Stop</button>
+        <button className="btn stop-btn" onClick={stopVideo}>
+          <FaStop /> Stop
+        </button>
       </div>
 
       {/* Seek Bar */}
-      <div style={{ marginTop: "10px" }}>
+      <div className="seek-bar">
         <input
           type="range"
           min="0"
           max="100"
           value={(currentTime / duration) * 100 || 0} // Percentage of playback completed
           onChange={handleSeek}
-          style={{ width: "70%" }}
+          className="seek-input"
         />
       </div>
 
       {/* Time Display */}
-      <p>
-        {Math.floor(currentTime / 60)}:
-        {Math.floor(currentTime % 60)
-          .toString()
-          .padStart(2, "0")}{" "}
-        / {Math.floor(duration / 60)}:
-        {Math.floor(duration % 60)
-          .toString()
-          .padStart(2, "0")}
+      <p className="time-display">
+        {Math.floor(currentTime / 60)}:{Math.floor(currentTime % 60).toString().padStart(2, "0")} /{" "}
+        {Math.floor(duration / 60)}:{Math.floor(duration % 60).toString().padStart(2, "0")}
       </p>
     </div>
   );

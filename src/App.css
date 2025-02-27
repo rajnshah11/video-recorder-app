@@ -1,38 +1,136 @@
+/* General styles */
+body {
+  margin: 0;
+  font-family: "Arial", sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Full viewport height */
+}
+
+/* Light Mode */
+.light-mode {
+  background-color: #f7fafc;
+  color: #4a5568;
+}
+
+.light-icon {
+  color: #f7fafc;
+}
+/* Dark Mode */
+.dark-mode {
+  background-color: #1a202c;
+  color: #e2e8f0;
+}
+
+.dark-icon {
+  color: #4a5568;
+}
+/* App container */
 .App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-height: 100vh;
+  flex-grow: 1;
+  padding: 20px; /* Added padding for content spacing */
+}
+
+/* Header styles */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 20px;
+  margin-bottom: 20px; /* Added margin to separate header from content */
+}
+
+.light-header {
+  background-color: #ffffff;
+}
+
+.dark-header {
+  background-color: #2d3748;
+}
+
+.app-header h1 {
+  margin: auto;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.theme-toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.icon {
+  font-size: 24px;
+}
+.controls button {
+  transition: all 0.3s ease;
+}
+
+/* Main content */
+.app-main {
+  display: flex;
+  justify-content: center; /* Horizontally center the sections */
+  align-items: center; /* Vertically center the sections */
+  flex-wrap: wrap; /* Allows stacking on smaller screens */
+  gap: 20px;
+  width: 100%;
+  margin-bottom: 40px; /* Space between content and footer */
+}
+
+/* Recorder & Player sections */
+.recorder-section,
+.player-section {
+  flex: 1;
+  max-width: 600px; /* Ensure maximum width to avoid stretching */
+  width: 100%;
+  height: 450px;
+  border-radius: 12px;
+  box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.15);
+  padding-bottom: 20px;
+  display: flex;
+  flex-direction: column;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
+  align-items: center; /* Centers horizontally */
+  background-color: #ffffff; /* Consistent background */
+}
+
+/* Dynamic colors */
+.light-section {
+  background-color: #d9e4f5;
+}
+
+.dark-section {
+  background: #4a5568;
+}
+
+/* Footer */
+.app-footer {
+  text-align: center;
+  padding: 10px;
+  width: 100%;
+  background-color: #2d3748;
   color: white;
+  position: absolute;
+  bottom: 0;
+  left: 0;
 }
 
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
+/* RESPONSIVE DESIGN */
+@media (max-width: 768px) {
+  .app-main {
+    flex-direction: column;
   }
-  to {
-    transform: rotate(360deg);
+
+  .recorder-section,
+  .player-section {
+    max-width: 100%;
+    height: auto; /* Allow height to adjust on small screens */
   }
 }

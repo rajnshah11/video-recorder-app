@@ -1,0 +1,118 @@
+/* General styles for the Video Recorder */
+.video-playback {
+    text-align: center;
+    margin-top: 20px;
+    font-family: "Arial", sans-serif;
+  }
+
+  
+  /* Title styling */
+  .title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    color: #333;
+  }
+  
+  /* Video container */
+  .video-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  /* Video preview styling */
+  .video-preview {
+    width: 70%;
+    max-width: 800px;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+    background-color: black;
+  }
+  
+  /* Controls container */
+  .controls {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+  }
+  
+  /* Buttons */
+  .btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s ease-in-out;
+  }
+  
+  .start-btn {
+    background-color: #4caf50; /* Green */
+  }
+  
+  .stop-btn {
+    background-color: #f44336; /* Red */
+  }
+  
+  .pause-btn {
+    background-color: darkorange; /* Blue */
+  }
+  
+  .btn:hover {
+    opacity: 0.85;
+    transform: scale(1.05);
+  }
+  
+  .btn:disabled,
+.btn.clicked {
+  background-color: #777; /* Gray */
+  cursor: not-allowed;
+}
+  /* Seek Bar */
+  .seek-bar {
+    margin-top: 20px;
+  }
+  
+  .seek-input {
+    width: 70%;
+    margin: 0 auto;
+    height: 8px;
+    border-radius: 5px;
+    background: #ddd;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+  
+  .seek-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: blue;
+    cursor: pointer;
+  }
+  
+  .seek-input::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #4caf50;
+    cursor: pointer;
+  }
+  
+  /* Time Display */
+  .time-display {
+    font-size: 18px;
+    margin-top: 10px;
+    color: #333;
+  }
+  
