@@ -1,0 +1,15 @@
+body {
+  font-family: Arial, sans-serif;
+}
+
+.App {
+  text-align: center;
+}
+
+video {
+  width: 80%;
+}
+
+button {
+  margin: 10px;
+}

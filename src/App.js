@@ -1,23 +1,17 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState } from "react";
+import VideoRecorder from "./components/VideoRecorder";
+import VideoPlayer from "./components/VideoPlayer";
 
 function App() {
+  const [videoPath, setVideoPath] = useState(null);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="App" style={{ textAlign: "center", marginTop: "20px" }}>
+      <h1>Electron Video Recorder</h1>
+      {/* Pass setVideoPath to VideoRecorder */}
+      <VideoRecorder onSave={(path) => setVideoPath(path)} />
+      {/* Pass videoPath to VideoPlayer */}
+      {videoPath && <VideoPlayer videoUrl={videoPath} />}
     </div>
   );
 }
