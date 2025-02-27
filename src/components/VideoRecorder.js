@@ -43,14 +43,19 @@ const VideoRecorder = ({ onSave, onStartRecording }) => {
         }
       };
 
-      recorder.onstart = () => console.log("Recording started");
-      recorder.onstop = () => handleStopRecording();
+      recorder.onstart = () => {
+        setIsRecording(true); // Start recording
+        alert("Recording Started!");  // Alert when recording starts
+      };
+      
+      recorder.onstop = () => {
+        handleStopRecording();
+      };
 
       setMediaRecorder(recorder);
-      recorder.start(); // Start recording
-      setIsRecording(true); // Disable resolution dropdown during recording
+      recorder.start();
     } catch (error) {
-      console.error("Error accessing media devices:", error);
+      alert("Error accessing media devices. Please check your camera and microphone.");
     }
   };
 
@@ -68,10 +73,8 @@ const VideoRecorder = ({ onSave, onStartRecording }) => {
 
   // Handle recording stop and save the file
   const handleStopRecording = () => {
-    console.log("Recording stopped");
-
     if (recordedChunksRef.current.length === 0) {
-      console.error("No recorded data available.");
+      alert("No video data recorded.");
       return;
     }
 
@@ -79,8 +82,7 @@ const VideoRecorder = ({ onSave, onStartRecording }) => {
 
     window.electron.ipcRenderer.invoke("show-save-dialog").then(async (filePath) => {
       if (!filePath) {
-        console.log("Save dialog canceled.");
-        return;
+        return; // Save dialog canceled
       }
 
       try {
@@ -88,32 +90,37 @@ const VideoRecorder = ({ onSave, onStartRecording }) => {
         const success = await window.electron.ipcRenderer.invoke("save-file", { filePath, buffer });
 
         if (success) {
-          console.log(`File saved at: ${filePath}`);
           onSave(filePath); // Notify parent component of saved file path
         } else {
-          console.error("Failed to save video.");
+          alert("Failed to save video. Please try again.");
         }
       } catch (error) {
-        console.error("Error converting Blob to Buffer:", error);
+        alert("Error saving video. Please try again.");
       }
     });
   };
 
   return (
-<div className="video-recorder">
+    <div className="video-recorder">
       <h2>🎥 Record Video</h2>
 
       {/* Video Preview */}
       <div className="video-container">
-        <video ref={videoRef} autoPlay muted className="video-preview"></video>
+        <video ref={videoRef} autoPlay muted className="video-preview" />
       </div>
 
       {/* Controls */}
       <div className="controls">
-        <button onClick={startRecording} disabled={isRecording} className="btn start-btn">
+        <button 
+          onClick={startRecording} 
+          disabled={isRecording} 
+          className="btn start-btn">
           <FaVideo className="icon" /> Start
         </button>
-        <button onClick={stopRecording} disabled={!isRecording} className="btn stop-btn">
+        <button 
+          onClick={stopRecording} 
+          disabled={!isRecording} 
+          className="btn stop-btn">
           <FaStop className="icon" /> Stop
         </button>
       </div>
@@ -121,7 +128,11 @@ const VideoRecorder = ({ onSave, onStartRecording }) => {
       {/* Resolution Selector */}
       <div className="resolution-selector">
         <label htmlFor="resolution">Resolution:</label>
-        <select id="resolution" value={resolution} onChange={(e) => setResolution(e.target.value)} disabled={isRecording}>
+        <select 
+          id="resolution" 
+          value={resolution} 
+          onChange={(e) => setResolution(e.target.value)} 
+          disabled={isRecording}>
           <option value="720p">720p</option>
           <option value="1080p">1080p</option>
           <option value="4K">4K</option>

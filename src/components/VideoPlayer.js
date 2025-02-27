@@ -1,78 +1,79 @@
-import React, { useRef, useState, useEffect } from "react";
-import { FaPlay, FaPause, FaStop } from "react-icons/fa"; // Import icons for controls
-import "./VideoPlayer.css"; // Import the CSS file
+import React, { useRef, useState, useEffect, useCallback } from "react";
+import { FaPlay, FaPause, FaStop } from "react-icons/fa";
+import "./VideoPlayer.css";
 
 const VideoPlayer = ({ videoUrl }) => {
-  const videoRef = useRef(null); // Reference to the video element
-  const [currentTime, setCurrentTime] = useState(0); // Current playback time
-  const [duration, setDuration] = useState(0); // Total duration of the video
-  const [isPlaying, setIsPlaying] = useState(false); // Playback state
+  const videoRef = useRef(null);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isError, setIsError] = useState(false);
 
-  // Update current time as the video plays
   const handleTimeUpdate = () => {
-    setCurrentTime(videoRef.current.currentTime);
+    if (videoRef.current) {
+      setCurrentTime(videoRef.current.currentTime);
+    }
   };
 
-  // Set duration when metadata is loaded
   const handleLoadedMetadata = () => {
     if (videoRef.current) {
       setDuration(videoRef.current.duration);
-      console.log("New video duration:", videoRef.current.duration); // Debugging log
     }
   };
 
-  // Play the video
-  const playVideo = () => {
+  const handleVideoError = () => {
+    setIsError(true);
+    console.error("Error loading video");
+  };
+
+  const playVideo = useCallback(() => {
     if (videoRef.current) {
-      videoRef.current.play();
+      videoRef.current.play().catch(handleVideoError);
       setIsPlaying(true);
+      alert("Video Started!");
     }
-  };
+  }, []);
 
-  // Pause the video
-  const pauseVideo = () => {
+  const pauseVideo = useCallback(() => {
     if (videoRef.current) {
       videoRef.current.pause();
       setIsPlaying(false);
+      alert("Video Paused!");
     }
-  };
+  }, []);
 
-  // Stop the video (pause and reset to start)
-  const stopVideo = () => {
+  const stopVideo = useCallback(() => {
     if (videoRef.current) {
       videoRef.current.pause();
-      videoRef.current.currentTime = 0; // Reset to beginning
+      videoRef.current.currentTime = 0;
       setCurrentTime(0);
       setIsPlaying(false);
+      alert("Video Stopped!");
     }
-  };
+  }, []);
 
-  // Seek to a specific time in the video
   const handleSeek = (event) => {
     if (videoRef.current) {
-      const newTime = (event.target.value / 100) * duration; // Calculate new time based on slider value
+      const newTime = (event.target.value / 100) * duration;
       videoRef.current.currentTime = newTime;
       setCurrentTime(newTime);
     }
   };
 
-  // Reload video when URL changes
   useEffect(() => {
+    const newVideoSrc = `${videoUrl}?t=${new Date().getTime()}`;
     if (videoRef.current) {
-      console.log("Video URL changed:", videoUrl); // Debugging log
-
-      // Reset playback state
+      setIsError(false);
       videoRef.current.pause();
-      videoRef.current.src = videoUrl; 
+      videoRef.current.src = newVideoSrc;
       videoRef.current.load();
-      setCurrentTime(0); 
-      setDuration(0); 
-      setIsPlaying(false); 
+      setCurrentTime(0);
+      setDuration(0);
+      setIsPlaying(false);
     }
     return () => {
       if (videoRef.current) {
-        videoRef.current.pause(); // Stop the video when unmounting
-        videoRef.current = null;
+        videoRef.current.pause();
       }
     };
   }, [videoUrl]);
@@ -81,42 +82,50 @@ const VideoPlayer = ({ videoUrl }) => {
     <div className="video-playback">
       <h2>🎥 Playback</h2>
 
-      {/* Video container */}
       <div className="video-container">
         <video
           ref={videoRef}
           onTimeUpdate={handleTimeUpdate}
-          onLoadedMetadata={handleLoadedMetadata} // Triggered when metadata is loaded
+          onLoadedMetadata={handleLoadedMetadata}
+          onError={handleVideoError}
           className="video-preview"
-        ></video>
+          aria-label="Video Player"
+        />
+        {isError && <div className="error-message">Failed to load video. Please try again.</div>}
       </div>
 
-      {/* Playback Controls */}
       <div className="controls">
-        <button className="btn start-btn" onClick={playVideo} disabled={isPlaying}>
-          <FaPlay /> Play
+        {/* Toggle Play/Pause Button */}
+        <button
+          className="btn start-btn"
+          onClick={isPlaying ? pauseVideo : playVideo} // Toggle between play and pause
+          disabled={isError}
+          aria-label={isPlaying ? "Pause video" : "Play video"}
+        >
+          {isPlaying ? <FaPause /> : <FaPlay />} {isPlaying ? "Pause" : "Play"}
         </button>
-        <button className="btn pause-btn" onClick={pauseVideo} disabled={!isPlaying}>
-          <FaPause /> Pause
-        </button>
-        <button className="btn stop-btn" onClick={stopVideo}>
+        <button
+          className="btn stop-btn"
+          onClick={stopVideo}
+          disabled={isError}
+          aria-label="Stop video"
+        >
           <FaStop /> Stop
         </button>
       </div>
 
-      {/* Seek Bar */}
       <div className="seek-bar">
         <input
           type="range"
           min="0"
           max="100"
-          value={(currentTime / duration) * 100 || 0} // Percentage of playback completed
+          value={(currentTime / duration) * 100 || 0}
           onChange={handleSeek}
           className="seek-input"
+          aria-label="Seek video"
         />
       </div>
 
-      {/* Time Display */}
       <p className="time-display">
         {Math.floor(currentTime / 60)}:{Math.floor(currentTime % 60).toString().padStart(2, "0")} /{" "}
         {Math.floor(duration / 60)}:{Math.floor(duration % 60).toString().padStart(2, "0")}
