@@ -8,10 +8,10 @@ function App() {
   return (
     <div className="App" style={{ textAlign: "center", marginTop: "20px" }}>
       <h1>Electron Video Recorder</h1>
-      {/* Pass setVideoPath to VideoRecorder */}
       <VideoRecorder onSave={(path) => setVideoPath(path)} />
-      {/* Pass videoPath to VideoPlayer */}
-      {videoPath && <VideoPlayer videoUrl={videoPath} />}
+      {videoPath && (
+        <VideoPlayer videoUrl={`http://localhost:3001/video?path=${encodeURIComponent(videoPath)}`} />
+      )}
     </div>
   );
 }

@@ -16,10 +16,55 @@ const VideoRecorder = ({ onSave }) => {
       videoRef.current.play();
 
       const recorder = new MediaRecorder(stream, { mimeType: "video/webm" });
+
       recorder.ondataavailable = (event) => {
-        if (event.data.size > 0)
+        if (event.data.size > 0) {
+          console.log("Data available: ", event.data);
           setRecordedChunks((prev) => [...prev, event.data]);
+        }
       };
+
+      recorder.onstart = () => {
+        console.log("Recording started");
+      };
+
+      recorder.onstop = () => {
+        console.log("Recording stopped");
+        if (recordedChunks.length === 0) {
+          console.error("No recorded data available.");
+          return;
+        }
+
+        // Create a Blob from recorded chunks
+        const blob = new Blob(recordedChunks, { type: "video/webm" });
+        console.log("Recorded video size:", blob.size);
+
+        // Show save dialog
+        window.electron.ipcRenderer.invoke("show-save-dialog").then(async (filePath) => {
+          if (!filePath) {
+            console.log("Save dialog canceled.");
+            return;
+          }
+
+          try {
+            const buffer = window.electron.Buffer.from(await blob.arrayBuffer());
+            const success = await window.electron.ipcRenderer.invoke("save-file", {
+              filePath,
+              buffer,
+            });
+
+            if (success) {
+              console.log(`File saved at: ${filePath}`);
+              onSave(filePath); // Trigger callback with saved file path
+            } else {
+              console.error("Failed to save video.");
+            }
+          } catch (error) {
+            console.error("Error converting Blob to Buffer:", error);
+          }
+        });
+      };
+
       setMediaRecorder(recorder);
       recorder.start();
       setIsRecording(true);
@@ -28,38 +73,17 @@ const VideoRecorder = ({ onSave }) => {
     }
   };
 
-  const stopRecording = async () => {
+  const stopRecording = () => {
     if (!mediaRecorder || !videoRef.current) return;
-  
+
+    // Stop recording and media tracks
     mediaRecorder.stop();
-    videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
-  
-    mediaRecorder.onstop = async () => {
-      const blob = new Blob(recordedChunks, { type: "video/webm" });
-  
-      // Show save dialog and get file path
-      const filePath = await window.electron.ipcRenderer.invoke(
-        "show-save-dialog"
-      );
-      if (filePath) {
-        // Convert blob to buffer and send it to Electron for saving
-        const buffer = window.electron.Buffer.from(await blob.arrayBuffer());
-        const success = await window.electron.ipcRenderer.invoke("save-file", {
-          filePath,
-          buffer,
-        });
-  
-        if (success) {
-          console.log(`File saved at: ${filePath}`);
-          onSave(filePath); 
-        } else {
-          console.error("Failed to save video.");
-        }
-      }
-    };
-  
+    if (videoRef.current.srcObject) {
+      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+    }
+
     setIsRecording(false);
-  };  
+  };
 
   return (
     <div style={{ textAlign: "center", marginTop: "20px" }}>

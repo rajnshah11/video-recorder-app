@@ -1,0 +1,114 @@
+const { app, BrowserWindow, ipcMain, dialog } = require("electron");
+const path = require("path");
+const fs = require("fs");
+const http = require("http");
+
+const server = http.createServer((req, res) => {
+  let filePath = decodeURIComponent(req.url.slice(1)); // Remove leading '/'
+
+  // Remove 'file://' if present in the URL (for edge cases)
+  filePath = filePath.replace(/^file:\/\//, '');  // Remove 'file://' part
+
+  // Resolve the absolute path relative to the server directory
+  const fullFilePath = path.join(__dirname, filePath); 
+
+  console.log(fullFilePath); // Log the full file path to ensure correct resolution
+
+  // Handle CORS (Cross-Origin Resource Sharing)
+  res.setHeader("Access-Control-Allow-Origin", "*");
+
+  // Check if the file exists
+  if (!fs.existsSync(fullFilePath)) {
+    res.writeHead(404, { "Content-Type": "text/plain" });
+    res.end("File not found");
+    return;
+  }
+
+  const stat = fs.statSync(fullFilePath); // Get file stats
+  const range = req.headers.range; // Get the range from request headers
+
+  if (!range) {
+    // If no range header, send the entire file
+    res.writeHead(200, {
+      "Content-Type": "video/mp4",
+      "Content-Length": stat.size,
+    });
+    fs.createReadStream(fullFilePath).pipe(res);
+  } else {
+    // Handle range requests
+    const [startStr, endStr] = range.replace(/bytes=/, "").split("-");
+    const start = parseInt(startStr, 10);
+    const end = endStr ? parseInt(endStr, 10) : stat.size - 1;
+
+    if (start >= stat.size || end >= stat.size) {
+      res.writeHead(416, {
+        "Content-Range": `bytes */${stat.size}`,
+      });
+      res.end();
+      return;
+    }
+
+    res.writeHead(206, {
+      "Content-Range": `bytes ${start}-${end}/${stat.size}`,
+      "Accept-Ranges": "bytes",
+      "Content-Length": end - start + 1,
+      "Content-Type": "video/mp4",
+    });
+
+    fs.createReadStream(fullFilePath, { start, end }).pipe(res); // Send part of the file (range)
+  }
+});
+
+server.listen(3001, () => {
+  console.log("Server running on http://localhost:3001");
+});
+
+let mainWindow;
+
+app.whenReady().then(() => {
+  // Create BrowserWindow
+  mainWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: `${__dirname}/preload.js`, // Enable IPC in React
+    },
+  });
+
+  mainWindow.loadURL("http://localhost:3000"); // Update with your React build path
+  mainWindow.webContents.openDevTools();
+});
+
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
+});
+
+// Handle save dialog
+ipcMain.handle("show-save-dialog", async () => {
+  const result = await dialog.showSaveDialog(mainWindow, {
+    title: "Save Recorded Video",
+    defaultPath: "Untitled0.mp4",
+    filters: [
+      { name: "MP4 Video", extensions: ["mp4"] }, // Default option
+      { name: "WebP Video", extensions: ["webm"] },
+    ],
+  });
+
+  // Return null if user cancels the dialog
+  return result.canceled ? null : result.filePath;
+});
+
+// Handle save file operation
+ipcMain.handle("save-file", async (_, { filePath, buffer }) => {
+  try {
+    fs.writeFileSync(filePath, buffer);
+    return true; // Explicitly return success status
+  } catch (error) {
+    console.error("Failed to save file:", error);
+    return false;
+  }
+});
