@@ -8,19 +8,10 @@ const startServer = require("../src/server/server"); // Import server logic
 
 let mainWindow;
 
-// Function to validate environment variables
-function validateEnv() {
-  if (!process.env.PORT) {
-    logger.error("Missing environment variable: PORT");
-    process.exit(1); // Exit the app if required variable is missing
-  }
-}
-
 app.whenReady().then(() => {
-  validateEnv(); // Validate required environment variables
 
   // Start the Express server using the port from the .env file
-  startServer(process.env.PORT || 8081);
+  startServer(8081);
 
   // Create the Electron window
   mainWindow = new BrowserWindow({
