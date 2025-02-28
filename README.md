@@ -40,7 +40,7 @@ This is a desktop application built with **Electron** and **React** that allows 
 ### Steps to Run Locally
 1. Clone the repository:
    ```bash
-   git clone 
+   git clone https://github.com/rajnshah11/video-recorder-app.git
    cd video-recorder-app
    ```
 
