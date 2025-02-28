@@ -51,7 +51,6 @@ This is a desktop application built with **Electron** and **React** that allows 
 
 3. Create a `.env` file in the root directory with the following content:
    ```
-   PORT=8081
    REACT_URL=http://localhost:3000
    NODE_ENV=development
    ```
