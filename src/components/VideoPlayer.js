@@ -69,11 +69,6 @@ const VideoPlayer = ({ videoUrl }) => {
       setDuration(0);
       setIsPlaying(false);
     }
-    return () => {
-      if (videoRef.current) {
-        videoRef.current.pause();
-      }
-    };
   }, [videoUrl]);
 
   return (
@@ -123,7 +118,6 @@ const VideoPlayer = ({ videoUrl }) => {
           aria-label="Seek video"
         />
       </div>
-
       <p className="time-display">
         {Math.floor(currentTime / 60)}:{Math.floor(currentTime % 60).toString().padStart(2, "0")} /{" "}
         {Math.floor(duration / 60)}:{Math.floor(duration % 60).toString().padStart(2, "0")}

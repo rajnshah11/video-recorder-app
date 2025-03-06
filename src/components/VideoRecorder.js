@@ -15,8 +15,6 @@ const VideoRecorder = ({ onSave, onStartRecording }) => {
     "1080p": { width: 1920, height: 1080 },
     "4K": { width: 3840, height: 2160 },
   };
-
-  // Start recording video
   const startRecording = async () => {
     try {
       const { width, height } = resolutions[resolution]; // Get resolution dimensions
@@ -24,42 +22,83 @@ const VideoRecorder = ({ onSave, onStartRecording }) => {
         video: { width, height },
         audio: true,
       });
-
+  
       if (onStartRecording) {
         onStartRecording(); // Notify parent component when recording starts
       }
-
-      // Set up video stream
+  
       videoRef.current.srcObject = stream;
       videoRef.current.play();
       recordedChunksRef.current = [];
-
-      // Initialize MediaRecorder
-      const recorder = new MediaRecorder(stream, { mimeType: "video/mp4" });
-
+  
+      // Use WebM format as an intermediate format (WebM is needed to record)
+      const mimeType = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : 'video/webm';
+      const recorder = new MediaRecorder(stream, { mimeType });
+    
       recorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
           recordedChunksRef.current.push(event.data);
         }
       };
-
+  
       recorder.onstart = () => {
-        setIsRecording(true); // Start recording
-        alert("Recording Started!");  // Alert when recording starts
+        setIsRecording(true);
+        alert("Recording Started!");
       };
-      
-      recorder.onstop = () => {
-        handleStopRecording();
+  
+      recorder.onstop = async () => {
+        await handleStopRecording(); // Handle stop after conversion
       };
-
+  
       setMediaRecorder(recorder);
       recorder.start();
     } catch (error) {
       alert("Error accessing media devices. Please check your camera and microphone.");
     }
   };
-
-  // Stop recording video
+  
+  const handleStopRecording = async () => {
+    if (recordedChunksRef.current.length === 0) {
+      alert("No video data recorded.");
+      return;
+    }
+  
+    try {
+      // Show the save dialog for MP4 directly
+      let filePath = await window.electron.showSaveDialog();
+      if (!filePath) return;
+      filePath = filePath.replace(/\.webm$/, '');
+      const mp4Path = filePath.endsWith('.mp4') ? filePath : `${filePath}.mp4`;
+  
+      // Check if the recorded data is already in MP4 format
+      const isMP4 = recordedChunksRef.current[0].type.includes('mp4');
+  
+      if (isMP4) {
+        // If it's already MP4, save directly
+        const mp4Blob = new Blob(recordedChunksRef.current, { type: 'video/mp4' });
+        const mp4Buffer = window.electron.Buffer.from(await mp4Blob.arrayBuffer());
+        await window.electron.saveFile(mp4Path, mp4Buffer);
+        onSave(mp4Path);
+      } else {
+        // If it's WebM, convert to MP4
+        const webmBlob = new Blob(recordedChunksRef.current, { type: 'video/webm' });
+        const webmBuffer = window.electron.Buffer.from(await webmBlob.arrayBuffer());
+        const webmPath = mp4Path.replace(/\.mp4$/, '.webm');
+        await window.electron.saveFile(webmPath, webmBuffer);
+  
+        const success = await window.electron.convertWebMToMP4(webmPath, mp4Path);
+        if (success) {
+          onSave(mp4Path);
+        } else {
+          alert("Failed to convert video. The format may be unsupported.");
+        }
+      }
+    } catch (error) {
+      alert("Error processing video. Please try a different format or resolution.");
+      console.error("Video processing error:", error);
+    }
+  };
+  
   const stopRecording = () => {
     if (!mediaRecorder || !videoRef.current) return;
 
@@ -68,38 +107,9 @@ const VideoRecorder = ({ onSave, onStartRecording }) => {
       videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
     }
 
-    setIsRecording(false); // Enable resolution dropdown after stopping recording
+    setIsRecording(false);
   };
-
-  // Handle recording stop and save the file
-  const handleStopRecording = () => {
-    if (recordedChunksRef.current.length === 0) {
-      alert("No video data recorded.");
-      return;
-    }
-
-    const blob = new Blob(recordedChunksRef.current, { type: "video/mp4" });
-
-    window.electron.ipcRenderer.invoke("show-save-dialog").then(async (filePath) => {
-      if (!filePath) {
-        return; // Save dialog canceled
-      }
-
-      try {
-        const buffer = window.electron.Buffer.from(await blob.arrayBuffer());
-        const success = await window.electron.ipcRenderer.invoke("save-file", { filePath, buffer });
-
-        if (success) {
-          onSave(filePath); // Notify parent component of saved file path
-        } else {
-          alert("Failed to save video. Please try again.");
-        }
-      } catch (error) {
-        alert("Error saving video. Please try again.");
-      }
-    });
-  };
-
+  
   return (
     <div className="video-recorder">
       <h2>🎥 Record Video</h2>
@@ -111,16 +121,18 @@ const VideoRecorder = ({ onSave, onStartRecording }) => {
 
       {/* Controls */}
       <div className="controls">
-        <button 
-          onClick={startRecording} 
-          disabled={isRecording} 
-          className="btn start-btn">
+        <button
+          onClick={startRecording}
+          disabled={isRecording}
+          className="btn start-btn"
+        >
           <FaVideo className="icon" /> Start
         </button>
-        <button 
-          onClick={stopRecording} 
-          disabled={!isRecording} 
-          className="btn stop-btn">
+        <button
+          onClick={stopRecording}
+          disabled={!isRecording}
+          className="btn stop-btn"
+        >
           <FaStop className="icon" /> Stop
         </button>
       </div>
@@ -128,11 +140,12 @@ const VideoRecorder = ({ onSave, onStartRecording }) => {
       {/* Resolution Selector */}
       <div className="resolution-selector">
         <label htmlFor="resolution">Resolution:</label>
-        <select 
-          id="resolution" 
-          value={resolution} 
-          onChange={(e) => setResolution(e.target.value)} 
-          disabled={isRecording}>
+        <select
+          id="resolution"
+          value={resolution}
+          onChange={(e) => setResolution(e.target.value)}
+          disabled={isRecording}
+        >
           <option value="720p">720p</option>
           <option value="1080p">1080p</option>
           <option value="4K">4K</option>

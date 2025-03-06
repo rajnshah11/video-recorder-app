@@ -5,22 +5,13 @@ const path = require("path");
 const fs = require("fs");
 const { logger } = require("../src/server/utils/logger"); // Logging utility
 const startServer = require("../src/server/server"); // Import server logic
+const ffmpeg = require("fluent-ffmpeg"); // Required for video conversion
 
 let mainWindow;
 
-// Function to validate environment variables
-function validateEnv() {
-  if (!process.env.PORT) {
-    logger.error("Missing environment variable: PORT");
-    process.exit(1); // Exit the app if required variable is missing
-  }
-}
-
 app.whenReady().then(() => {
-  validateEnv(); // Validate required environment variables
-
-  // Start the Express server using the port from the .env file
-  startServer(process.env.PORT || 8081);
+  // Start the Express server using the port
+  startServer(process.env.SERVER_PORT);
 
   // Create the Electron window
   mainWindow = new BrowserWindow({
@@ -36,10 +27,9 @@ app.whenReady().then(() => {
   // Use the React URL from the .env file for loading the frontend
   mainWindow.loadURL(process.env.REACT_URL);
 
-  // Open DevTools only in development
-  //if (process.env.NODE_ENV === "development") {
-  //  mainWindow.webContents.openDevTools();
-  //}
+  if (process.env.NODE_ENV === "development") {
+    mainWindow.webContents.openDevTools();
+  }
 
   logger.info("Electron app started successfully.");
 });
@@ -91,6 +81,32 @@ ipcMain.handle("save-file", async (_, { filePath, buffer }) => {
     logger.error(`Failed to save file: ${error.message}`);
     return false;
   }
+});
+
+ipcMain.handle("convert-webm-to-mp4", async (event, { webmPath, mp4Path }) => {
+  try {
+    return new Promise((resolve, reject) => {
+      ffmpeg(webmPath)
+        .output(mp4Path)
+        .on("end", () => {
+          resolve(true);
+        })
+        .on("error", (err) => {
+          console.error("Error during conversion:", err);
+          reject(false);
+        })
+        .run();
+    });
+  } catch (error) {
+    console.error("Error handling conversion:", error);
+    return false;
+  }
+});
+
+ipcMain.handle("get-env-variables", async () => {
+  return {
+    serverUrl: process.env.SERVER_URL || "localhost", // Example fallback
+  };
 });
 
 // Handle uncaught exceptions in production
